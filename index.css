@@ -1,53 +1,38 @@
-body { font-family: 'Montserrat', sans-serif; margin: 0; }
+/* style.css improvements */
 
-/* Replaces py-5 and text-center */
-section, header {
-    padding: 80px 0;
-    text-align: center;
+/* Ensure images in cards are uniform in size */
+.card-img-top {
+    height: 200px;
+    object-fit: cover;
+    background-color: #eee; /* Fallback if image path is wrong */
 }
 
-header#landing {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    background-color: #ffffff;
+/* Add spacing between cards and text without using <br> */
+.card-body {
+    padding: 1.5rem;
 }
 
-/* Fixes "Contact Section Exists" error */
-#contact {
-    background-color: #212529;
-    color: #ffffff;
+.card-title {
+    margin-bottom: 1rem;
+    font-weight: 700;
 }
 
-h2 { margin-bottom: 50px; }
-
+/* Hover effect for a professional touch */
 .card {
-    border: 1px solid #ddd;
-    margin-bottom: 20px;
-    height: 100%;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.card img { width: 100%; }
-
-.tool-box {
-    border: 1px solid #ddd;
-    padding: 20px;
-    margin-bottom: 15px;
+.card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.15);
 }
 
-/* Basic Form Styling to replace Bootstrap classes */
-#contact-form input, #contact-form textarea {
-    display: block;
-    width: 100%;
-    max-width: 500px;
-    margin: 10px auto;
-    padding: 10px;
+/* Tool section spacing */
+#tools .border {
+    transition: background-color 0.3s;
 }
 
-#contact-form button {
-    padding: 10px 30px;
-    background-color: #0d6efd;
+#tools .border:hover {
+    background-color: #343a40;
     color: white;
-    border: none;
 }
