@@ -9,7 +9,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <!-- hCaptcha API Script -->
+    <script src="https://js.hcaptcha.com/1/api.js" async defer></script>
 </head>
 <body>
 
@@ -148,8 +149,6 @@
                         
                         <input type="hidden" name="access_key" value="91c0b0e7-58c2-48d8-a99c-f04255e380e5">
                         
-                        <input type="checkbox" name="recaptcha" id="recaptcha" style="display:none !important" checked>
-                        
                         <input type="hidden" name="subject" value="New message from Gladys Ramos Portfolio">
 
                         <div class="mb-3">
@@ -165,8 +164,9 @@
                             <textarea class="form-control" id="message" name="message" rows="5" required></textarea>
                         </div>
                         
+                        <!-- hCaptcha Widget Element with your key -->
                         <div class="mb-3 d-flex justify-content-center">
-                            <div class="g-recaptcha" data-sitekey="6LcC68gZAAAAAK8gYw7hMRb9v6yv9b2S3O6U5vkw"></div>
+                            <div class="h-captcha" data-sitekey="31d69326-27e2-4868-a4f2-7e58622a9b8c"></div>
                         </div>
                         
                         <div class="d-flex align-items-center justify-content-between mt-4">
