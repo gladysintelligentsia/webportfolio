@@ -1,7 +1,6 @@
 <script setup>
 	import { Notyf } from 'notyf';
-	// FIX 1: Imported missing lifecycle hooks from Vue
-	import { ref, onMounted, onBeforeUnmount } from 'vue';
+	import { ref, onMounted } from 'vue';
 
 	const notyf = new Notyf();
 
@@ -12,24 +11,21 @@
 
 	// Web3Forms Access Key
 	const WEB3FORMS_ACCESS_KEY = "91c0b0e7-58c2-48d8-a99c-f04255e380e5"; 
-
-	// Email subject that will appear when a form submission is received.
 	const subject = "New message from Gladys Ramos Portfolio";
 
-	// The submitForm() function handles the contact form submission.
 	const submitForm = async () => {
-
-		// Ensure the user completes the reCAPTCHA challenge before submitting the form.
-		if(!recaptchaToken.value) {
-			notyf.error('Please verify that you are not a robot');
+		// 1. Check if user completed the Google reCAPTCHA checkbox
+		const recaptchaResponse = window.grecaptcha.getResponse();
+		
+		if (!recaptchaResponse) {
+			notyf.error('Please verify that you are not a robot using Google reCAPTCHA');
 			return;
 		}
 
-		// While the email is being sent, disable the button and change text to "Sending..."
 		isLoading.value = true;
 
 		try {
-			// Send HTTP request to Web3Forms API
+			// Send submission payload to Web3Forms
 			const response = await fetch("https://api.web3forms.com/submit", {
 				method: "POST",
 				headers: {
@@ -42,86 +38,32 @@
 					name: name.value,
 					email: email.value,
 					message: message.value,
-					// Optional: send the token along if Web3forms verification is enabled on their dashboard
-					"g-recaptcha-response": recaptchaToken.value 
+					// Sends validation token safely to backend context
+					"g-recaptcha-response": recaptchaResponse
 				})
 			});
 
 			const result = await response.json();
 
 			if (result.success) {
-				console.log(result);
-				// Reset form fields upon success
+				isLoading.value = false;
+				notyf.success("Message Sent!");
+				
+				// Reset inputs & recaptha checkbox state
 				name.value = "";
 				email.value = "";
 				message.value = "";
-				notyf.success("Message Sent!");
+				window.grecaptcha.reset();
 			} else {
+				isLoading.value = false;
 				notyf.error(result.message || "Failed to send message.");
 			}
 		} catch (error) {
 			console.log(error);
-			notyf.error("Failed to send message.");
-		} finally {
 			isLoading.value = false;
-			// Reset the reCAPTCHA widget after submission
-			resetRecaptcha();
+			notyf.error("Failed to send message.");
 		}
 	}
-
-	/* reCAPTCHA Integration */
-
-	// FIX 3: Remember to insert your real Google client site key here!
-	// Paste the copied key right here
-	const SITE_KEY = '6LckbhUtAAAAAHOWunqHB7VyrAk5XBpdkBspHSv-';
-	const recaptchaContainer = ref(null);
-	const recaptchaWidgetId = ref(null);
-	const recaptchaToken = ref('');
-
-	function onRecaptchaSuccess(token) {
-		recaptchaToken.value = token;
-	}
-
-	function onRecaptchaExpired() {
-		recaptchaToken.value = '';
-	}
-
-	function renderRecaptcha() {
-		if (!window.grecaptcha) {
-			console.error('reCAPTCHA not loaded');
-			return;
-		}
-
-		recaptchaWidgetId.value = window.grecaptcha.render(recaptchaContainer.value, {
-			sitekey: SITE_KEY,
-			size: 'normal',
-			callback: onRecaptchaSuccess,
-			'expired-callback': onRecaptchaExpired,
-		});
-	}
-
-	function resetRecaptcha() {
-		if (recaptchaWidgetId.value !== null) {
-			window.grecaptcha.reset(recaptchaWidgetId.value);
-			recaptchaToken.value = '';
-		}
-	}
-
-	// Create persistent scope wrapper for the interval so clear can target it correctly
-	let interval = null;
-
-	onMounted(() => {
-		interval = setInterval(() => {
-			if (window.grecaptcha && window.grecaptcha.render) {
-				renderRecaptcha();
-				clearInterval(interval);
-			}
-		}, 100);
-	});  
-
-	onBeforeUnmount(() => {
-		if (interval) clearInterval(interval);
-	});
 </script>
 
 <template>
@@ -137,17 +79,17 @@
 			<div class="col-md-6">
 				<form @submit.prevent="submitForm">
 					<div class="mb-3">
-						<input type="text" id="firstName" v-model="name" class="form-control contact-form-control" placeholder="First Name M.I. Last Name" required>
+						<input type="text" v-model="name" class="form-control" placeholder="Full Name" required>
 					</div>
 					<div class="mb-3">
-						<input type="email" id="emailAddress" v-model="email" class="form-control contact-form-control" placeholder="Email" required>
+						<input type="email" v-model="email" class="form-control" placeholder="Email Address" required>
 					</div>
 					<div class="mb-3">
-						<textarea id="messageBody" class="form-control contact-form-control" v-model="message" rows="6" placeholder="Message" required></textarea>
+						<textarea class="form-control" v-model="message" rows="6" placeholder="Your Message" required></textarea>
 					</div>
-
+					
 					<div class="mb-3 d-flex justify-content-center justify-content-md-start">
-						<div ref="recaptchaContainer"></div>
+						<div class="g-recaptcha" data-sitekey="PASTE_YOUR_GOOGLE_RECAPTCHA_SITE_KEY_HERE"></div>
 					</div>
 
 					<div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
