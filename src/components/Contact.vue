@@ -15,56 +15,20 @@
 	// Email subject that will appear when a form submission is received.
 	const subject = "New message from Gladys Ramos Portfolio";
 
-	/* reCAPTCHA Integration Setup */
-	const SITE_KEY = '6LdfC0MfAAAAAF963m998U0ky9snF_1E_z8isY6v';  
-
-	const recaptchaContainer = ref(null);
-	const recaptchaWidgetId = ref(null);
-	const recaptchaToken = ref('');
-
-	function onRecaptchaSuccess(token) {
-		recaptchaToken.value = token;
-	}
-
-	function onRecaptchaExpired() {
-		recaptchaToken.value = '';
-	}
-
-	function renderRecaptcha() {
-		// Clean rendering path: Verify the element is ready and target standard engine
-		if (window.grecaptcha && window.grecaptcha.render && recaptchaContainer.value) {
-			try {
-				// Clear any lingering rendering artifacts before drawing the fresh widget
-				recaptchaContainer.value.innerHTML = "";
-				
-				recaptchaWidgetId.value = window.grecaptcha.render(recaptchaContainer.value, {
-					sitekey: SITE_KEY,
-					size: 'normal',
-					callback: onRecaptchaSuccess,
-					'expired-callback': onRecaptchaExpired,
-				});
-			} catch (error) {
-				console.warn("reCAPTCHA rendering handled natively:", error);
-			}
-		}
-	}
-
-	function resetRecaptcha() {
-		if (recaptchaWidgetId.value !== null && window.grecaptcha && window.grecaptcha.reset) {
-			window.grecaptcha.reset(recaptchaWidgetId.value);
-			recaptchaToken.value = '';
-		}
-	}
-
+	// The submitForm() function handles the contact form submission.
 	const submitForm = async () => {
+
+		// Ensure the user completes the reCAPTCHA challenge before submitting the form.
 		if (!recaptchaToken.value) {
-			notyf.error('Please verify that you are not a robot.');
+			notyf.error('Please verify that you are not a robot');
 			return;
 		}
 
+		// While the email is being sent, disable the button and change text to "Sending..."
 		isLoading.value = true;
 
 		try {
+			// Send HTTP request to Web3Forms API
 			const response = await fetch("https://api.web3forms.com/submit", {
 				method: "POST",
 				headers: {
@@ -84,47 +48,78 @@
 			const result = await response.json();
 
 			if (result.success) {
+				console.log(result);
+				isLoading.value = false;
 				notyf.success("Message Sent!");
+				
+				// Clear form inputs on success
 				name.value = "";
 				email.value = "";
 				message.value = "";
-				resetRecaptcha();
 			} else {
+				isLoading.value = false;
 				notyf.error(result.message || "Failed to send message.");
-				resetRecaptcha();
 			}
 		} catch (error) {
-			console.error(error);
-			notyf.error("Failed to send message.");
-			resetRecaptcha();
-		} finally {
+			console.log(error);
 			isLoading.value = false;
+			notyf.error("Failed to send message.");
+		} finally {
+			resetRecaptcha();
 		}
 	}
 
-	// Native Single-Page-App Lifecycle Management
-	let checkInterval = null;
+	/* reCAPTCHA Integration */
+
+	// 2. Google reCAPTCHA V2 Site Key updated with your personal verified key
+	const SITE_KEY = '6LcySgctAAAAAG39ijQWxZ3P9AqcGre6tWT3EC71';  
+
+	const recaptchaContainer = ref(null);
+	const recaptchaWidgetId = ref(null);
+	const recaptchaToken = ref('');
+
+	function onRecaptchaSuccess(token) {
+		recaptchaToken.value = token;
+	}
+
+	function onRecaptchaExpired() {
+		recaptchaToken.value = '';
+	}
+
+	function renderRecaptcha() {
+		if (!window.grecaptcha) {
+			console.error('reCAPTCHA not loaded');
+			return;
+		}
+
+		recaptchaWidgetId.value = window.grecaptcha.render(recaptchaContainer.value, {
+			sitekey: SITE_KEY,
+			size: 'normal',
+			callback: onRecaptchaSuccess,
+			'expired-callback': onRecaptchaExpired,
+		});
+	}
+
+	function resetRecaptcha() {
+		if (recaptchaWidgetId.value !== null) {
+			window.grecaptcha.reset(recaptchaWidgetId.value);
+			recaptchaToken.value = '';
+		}
+	}
 
 	onMounted(() => {
-		// If the core script has loaded already, execute immediately
-		if (window.grecaptcha && window.grecaptcha.render) {
-			renderRecaptcha();
-		} else {
-			// Fail-safe interval polling: checks every 300ms if script finishes late
-			checkInterval = setInterval(() => {
-				if (window.grecaptcha && window.grecaptcha.render) {
-					renderRecaptcha();
-					clearInterval(checkInterval);
-				}
-			}, 300);
-		}
-	});
+		const interval = setInterval(() => {
+			if (window.grecaptcha && window.grecaptcha.render) {
+				renderRecaptcha();
+				clearInterval(interval);
+			}
+		}, 100);
 
-	onBeforeUnmount(() => {
-		if (checkInterval) {
-			clearInterval(checkInterval);
-		}
-	});
+		onBeforeUnmount(() => {
+			clearInterval(interval);
+		});
+	});  
+	
 </script>
 
 <template>
@@ -140,7 +135,7 @@
 			<div class="col-md-6">
 				<form @submit.prevent="submitForm">
 					<div class="mb-3">
-						<input type="text" id="name" v-model="name" class="form-control" placeholder="Name" required>
+						<input type="text" id="firstName" v-model="name" class="form-control" placeholder="Name" required>
 					</div>
 					<div class="mb-3">
 						<input type="email" id="email" v-model="email" class="form-control" placeholder="Email Address" required>
@@ -148,11 +143,6 @@
 					<div class="mb-3">
 						<textarea id="message" class="form-control" v-model="message" rows="6" placeholder="Your Message" required></textarea>
 					</div>
-
-					<div class="mb-4 d-flex justify-content-start" style="min-height: 78px;">
-						<div ref="recaptchaContainer"></div>
-					</div>
-
 					<div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
 						<div class="social-icons d-flex gap-3 fs-4">
 							<a href="https://www.linkedin.com/in/gladysramos" target="_blank" id="linkedin"><i class="fab fa-linkedin"></i></a>
@@ -162,6 +152,10 @@
 						<button type="submit" class="btn btn-primary px-4" :disabled="isLoading">
 							{{ isLoading ? "Sending..." : "Submit" }}
 						</button>
+					</div>
+
+					<div class="d-flex justify-content-end mt-3">
+						<div ref="recaptchaContainer"></div>
 					</div>
 				</form>
 			</div>
