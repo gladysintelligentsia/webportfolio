@@ -1,6 +1,6 @@
 <script setup>
 	import { Notyf } from 'notyf';
-	import { ref, onMounted, onBeforeUnmount } from 'vue';
+	import { ref } from 'vue';
 
 	const notyf = new Notyf();
 
@@ -9,22 +9,14 @@
 	const message = ref("");
 	const isLoading = ref(false);
 
-	// 1. Web3Forms Access Key
+	// Web3Forms Access Key
 	const WEB3FORMS_ACCESS_KEY = "91c0b0e7-58c2-48d8-a99c-f04255e380e5"; 
 
-	// Email subject that will appear when a form submission is received.
+	// Email subject
 	const subject = "New message from Gladys Ramos Portfolio";
 
 	// The submitForm() function handles the contact form submission.
 	const submitForm = async () => {
-
-		// Ensure the user completes the reCAPTCHA challenge before submitting the form.
-		if (!recaptchaToken.value) {
-			notyf.error('Please verify that you are not a robot');
-			return;
-		}
-
-		// While the email is being sent, disable the button and change text to "Sending..."
 		isLoading.value = true;
 
 		try {
@@ -41,14 +33,13 @@
 					name: name.value,
 					email: email.value,
 					message: message.value,
-					"g-recaptcha-response": recaptchaToken.value
+					// The honeypot field is handled automatically by Web3Forms
 				})
 			});
 
 			const result = await response.json();
 
 			if (result.success) {
-				console.log(result);
 				isLoading.value = false;
 				notyf.success("Message Sent!");
 				
@@ -64,62 +55,8 @@
 			console.log(error);
 			isLoading.value = false;
 			notyf.error("Failed to send message.");
-		} finally {
-			resetRecaptcha();
 		}
 	}
-
-	/* reCAPTCHA Integration */
-
-	// 2. Google reCAPTCHA V2 Site Key updated with your personal verified key
-	const SITE_KEY = '6LcySgctAAAAAG39ijQWxZ3P9AqcGre6tWT3EC71';  
-
-	const recaptchaContainer = ref(null);
-	const recaptchaWidgetId = ref(null);
-	const recaptchaToken = ref('');
-
-	function onRecaptchaSuccess(token) {
-		recaptchaToken.value = token;
-	}
-
-	function onRecaptchaExpired() {
-		recaptchaToken.value = '';
-	}
-
-	function renderRecaptcha() {
-		if (!window.grecaptcha) {
-			console.error('reCAPTCHA not loaded');
-			return;
-		}
-
-		recaptchaWidgetId.value = window.grecaptcha.render(recaptchaContainer.value, {
-			sitekey: SITE_KEY,
-			size: 'normal',
-			callback: onRecaptchaSuccess,
-			'expired-callback': onRecaptchaExpired,
-		});
-	}
-
-	function resetRecaptcha() {
-		if (recaptchaWidgetId.value !== null) {
-			window.grecaptcha.reset(recaptchaWidgetId.value);
-			recaptchaToken.value = '';
-		}
-	}
-
-	onMounted(() => {
-		const interval = setInterval(() => {
-			if (window.grecaptcha && window.grecaptcha.render) {
-				renderRecaptcha();
-				clearInterval(interval);
-			}
-		}, 100);
-
-		onBeforeUnmount(() => {
-			clearInterval(interval);
-		});
-	});  
-	
 </script>
 
 <template>
@@ -134,6 +71,9 @@
 			</div>
 			<div class="col-md-6">
 				<form @submit.prevent="submitForm">
+					<!-- Honeypot Spam Protection -->
+					<input type="checkbox" name="botcheck" class="hidden" style="display: none;">
+
 					<div class="mb-3">
 						<input type="text" id="firstName" v-model="name" class="form-control" placeholder="Name" required>
 					</div>
@@ -152,10 +92,6 @@
 						<button type="submit" class="btn btn-primary px-4" :disabled="isLoading">
 							{{ isLoading ? "Sending..." : "Submit" }}
 						</button>
-					</div>
-
-					<div class="d-flex justify-content-end mt-3">
-						<div ref="recaptchaContainer"></div>
 					</div>
 				</form>
 			</div>
